@@ -3,18 +3,24 @@ USER root
 
 ARG NODE_VERSION=22.21.1
 ARG PI_VERSION=0.85.1
+# Ubuntu names the package fd-find and ships the binary as fdfind, to avoid a
+# name collision. pi looks for fd then fdfind, so /usr/bin/fdfind is enough and
+# pi stops downloading its own copy into ~/.pi/agent/bin.
+ARG FD_PACKAGE_VERSION=10.3.0-2ubuntu1
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends xz-utils ca-certificates curl \
- && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends \
+    xz-utils ca-certificates curl "fd-find=${FD_PACKAGE_VERSION}" \
+    && fdfind --version \
+    && rm -rf /var/lib/apt/lists/*
 
 # Explicit Node install instead of inheriting from the template: pi requires
 # >= 22.19, and the base image's bundled version is not a contract.
 RUN set -eux; \
     case "$(dpkg --print-architecture)" in \
-      amd64) a=x64 ;; \
-      arm64) a=arm64 ;; \
-      *) echo "unsupported architecture" >&2; exit 1 ;; \
+    amd64) a=x64 ;; \
+    arm64) a=arm64 ;; \
+    *) echo "unsupported architecture" >&2; exit 1 ;; \
     esac; \
     cd /tmp; \
     curl -fsSLO "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${a}.tar.xz"; \
@@ -27,6 +33,6 @@ RUN set -eux; \
 ENV PATH="/opt/node/bin:${PATH}"
 
 RUN npm install -g "@earendil-works/pi-coding-agent@${PI_VERSION}" \
- && pi --version
+    && pi --version
 
 USER agent

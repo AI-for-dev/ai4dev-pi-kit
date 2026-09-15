@@ -26,6 +26,7 @@ environment:
   variables:
     PI_SKIP_VERSION_CHECK: "1"
     PI_TELEMETRY: "0"
+    NODE_OPTIONS: "--disable-warning=UNDICI-EHPA"
 
 credentials:
   # One key covers opencode-go and opencode (Zen): pi reads OPENCODE_API_KEY
@@ -37,30 +38,27 @@ credentials:
       name: OPENCODE_API_KEY
       proxyManaged: true
       inject:
-        # openai-completions / openai-responses models (deepseek-v4-flash,
-        # glm-*, kimi-*, gpt-5.6-luna, grok-4.5, ...).
-        # Explicit header/format rather than the `scheme: bearer` shortcut.
-        # Both inject correctly on sbx 0.42.1, but the x-api-key entry
-        # below has no shortcut, so the explicit form keeps one style here.
-        # It also works on sbx 0.38.0, which validates `scheme` and then
-        # ignores it ("skipping empty service auth config" in daemon.log).
         - domain: opencode.ai
           header: Authorization
           format: "Bearer %s"
-        # anthropic-messages models (minimax-m3, qwen3.7-max, qwen3.7-plus,
-        # qwen3.8-max): pi sends x-api-key instead of Authorization.
-        # Only enable this if you use these models, see README.
-        # - domain: opencode.ai
-        #   header: x-api-key
-        #   format: "%s"
+  - service: ilaas
+    description: ILAAS API KEY (llm.ilaas.fr)
+    required: true
+    apiKey:
+      name: ILAAS_API_KEY
+      proxyManaged: true
+      inject:
+        - domain: llm.ilaas.fr
+          header: Authorization
+          format: "Bearer %s"
 
 permissions:
   network:
     allow:
       - opencode.ai
+      - llm.ilaas.fr
       - github.com
       - raw.githubusercontent.com
       - pypi.org
       - files.pythonhosted.org
-    deny:
       - pi.dev

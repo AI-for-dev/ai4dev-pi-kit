@@ -1,0 +1,20 @@
+{
+    "providers": {
+        "ilaas": {
+            "baseUrl": "https://llm.ilaas.fr/v1",
+            "api": "openai-completions",
+            "apiKey": "$ILAAS_API_KEY",
+            "models": [
+                {
+                    "id": "gemma-4-31b",
+                    "contextWindow": 128000,
+                    "reasoning": true
+                },
+                {
+                    "id": "qwen-3.6-35b-instruct",
+                    "contextWindow": 256000
+                }
+            ]
+        }
+    }
+}
