@@ -1,15 +1,16 @@
 schemaVersion: "2"
 kind: sandbox
 name: pi
-version: "0.1.0"
+version: "0.2.0"
 displayName: Pi
 description: Pi coding agent (pi.dev) in a Docker sandbox.
 sourceURL: https://github.com/earendil-works/pi
 
 sandbox:
-  # Local image loaded via `sbx template load`. For a team, push to a
-  # registry and pin by digest instead.
-  image: "pi-sandbox:0.85.1"
+  # Published by Docker (github.com/docker/sbx-kits-contrib, pi/), rebuilt
+  # nightly against pi's latest npm release. Pin by digest
+  # (docker.io/sbx/pi-image@sha256:...) when runs must be reproducible.
+  image: docker.io/sbx/pi-image:latest
   entrypoint: [pi, -a]
 
 agentInstructions:
@@ -39,8 +40,7 @@ credentials:
       proxyManaged: true
       inject:
         - domain: opencode.ai
-          header: Authorization
-          format: "Bearer %s"
+          scheme: bearer
   - service: ilaas
     description: ILAAS API KEY (llm.ilaas.fr)
     required: true
@@ -49,8 +49,7 @@ credentials:
       proxyManaged: true
       inject:
         - domain: llm.ilaas.fr
-          header: Authorization
-          format: "Bearer %s"
+          scheme: bearer
 
 permissions:
   network:
@@ -61,4 +60,5 @@ permissions:
       - raw.githubusercontent.com
       - pypi.org
       - files.pythonhosted.org
+      - registry.npmjs.org
       - pi.dev
