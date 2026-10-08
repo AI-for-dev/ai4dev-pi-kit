@@ -1,12 +1,17 @@
-# pi-sandbox
+# ai4dev-pi-kit
 
 Docker Sandboxes kit for the Pi coding agent ([pi.dev](https://pi.dev)), which
 is not one of the agents `sbx` runs out of the box. The kit is a
 `kind: sandbox` that boots Docker's published Pi image and adds the provider
 credentials, the network allowlist and the Pi configuration used in the course.
 
+Docker publishes a different kit, `docker.io/sbx/pi-kit`, which only wires
+Anthropic credentials. [pi-sandbox](https://github.com/carderne/pi-sandbox) is
+unrelated too: it is a Pi extension that wraps bash commands with
+`bwrap` or `sandbox-exec` on the host.
+
 ```
-pi-sandbox
+ai4dev-pi-kit
 ├── spec.yaml
 └── files/home/.pi/agent
     ├── models.json
@@ -96,9 +101,9 @@ is there for `pi install npm:...`.
 ## 5. Run
 
 ```bash
-sbx kit validate ~/path/to/pi-sandbox
+sbx kit validate ~/path/to/ai4dev-pi-kit
 cd ~/your-project
-sbx run ~/path/to/pi-sandbox
+sbx run ~/path/to/ai4dev-pi-kit
 ```
 
 ## Model auth headers
