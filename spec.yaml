@@ -30,17 +30,7 @@ environment:
     NODE_OPTIONS: "--disable-warning=UNDICI-EHPA"
 
 credentials:
-  # One key covers opencode-go and opencode (Zen): pi reads OPENCODE_API_KEY
-  # for both. proxyManaged => the VM only sees the sentinel value.
-  - service: opencode-go
-    description: OpenCode API key used by pi (opencode-go and opencode Zen)
-    required: true
-    apiKey:
-      name: OPENCODE_API_KEY
-      proxyManaged: true
-      inject:
-        - domain: opencode.ai
-          scheme: bearer
+  # proxyManaged => the VM only sees the sentinel value.
   - service: ilaas
     description: ILAAS API KEY (llm.ilaas.fr)
     required: true
@@ -54,7 +44,6 @@ credentials:
 permissions:
   network:
     allow:
-      - opencode.ai
       - llm.ilaas.fr
       - github.com
       - raw.githubusercontent.com

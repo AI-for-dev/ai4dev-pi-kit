@@ -53,20 +53,12 @@ sandbox:
   image: docker.io/sbx/pi-image@sha256:<digest>
 ```
 
-## 3. Register the provider keys
+## 3. Register the ILAAS key
 
-Each secret name matches a `service:` id declared by the kit. For ILAAS:
+The secret name matches the `service:` id declared by the kit:
 
 ```bash
 sbx secret set ilaas
-```
-
-`opencode-go` authenticates with an API key (`OPENCODE_API_KEY`), not OAuth.
-If the key is already in `~/.pi/agent/auth.json` on the host:
-
-```bash
-python3 -c "import json,os;print(json.load(open(os.path.expanduser('~/.pi/agent/auth.json')))['opencode-go']['key'])" \
-  | sbx secret set opencode-go
 ```
 
 On the first interactive run, `sbx` asks you to approve the credential binding
@@ -80,9 +72,6 @@ bindings:
   ilaas:
     apiKey:
       domains: [llm.ilaas.fr]
-  opencode-go:
-    apiKey:
-      domains: [opencode.ai]
 ```
 
 ## 4. Set the network policy
@@ -95,8 +84,8 @@ sbx policy init deny-all
 
 The kit's own `permissions.network.allow` list layers on top, for its
 sandboxes only. It must include every domain a credential is injected into:
-`sbx` does not allow those implicitly, so without `llm.ilaas.fr` and
-`opencode.ai` in the list every model call is refused. `registry.npmjs.org`
+`sbx` does not allow those implicitly, so without `llm.ilaas.fr` in the
+list every model call is refused. `registry.npmjs.org`
 is there for `pi install npm:...`.
 
 ## 5. Extensions
@@ -124,24 +113,4 @@ it starts Pi with `-a`.
 sbx kit validate ~/path/to/ai4dev-pi-kit
 cd ~/your-project
 sbx run ~/path/to/ai4dev-pi-kit
-```
-
-## Model auth headers
-
-`opencode-go` expects a different header depending on the model's API. The
-kit injects `Authorization: Bearer` (`scheme: bearer`):
-
-| API | Models | Header |
-| --- | --- | --- |
-| `openai-completions` / `openai-responses` | `deepseek-v4-flash`, `deepseek-v4-pro`, `glm-5.1`, `glm-5.2`, `kimi-*`, `mimo-*`, `hy3`, `minimax-m2.7`, `qwen3.6-plus`, `gpt-5.6-luna`, `grok-4.5` | `Authorization: Bearer` |
-| `anthropic-messages` | `minimax-m3`, `qwen3.7-max`, `qwen3.7-plus`, `qwen3.8-max` | `x-api-key` |
-
-`scheme` has no shortcut for `x-api-key`. To use one of the four
-`anthropic-messages` models, replace the `opencode.ai` inject entry in
-`spec.yaml` with:
-
-```yaml
-        - domain: opencode.ai
-          header: x-api-key
-          format: "%s"
 ```
