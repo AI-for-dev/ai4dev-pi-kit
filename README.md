@@ -14,6 +14,7 @@ unrelated too: it is a Pi extension that wraps bash commands with
 ai4dev-pi-kit
 ├── spec.yaml
 └── files/home/.pi/agent
+    ├── extensions/pi-permission-system/config.json
     ├── models.json
     └── settings.json
 ```
@@ -98,7 +99,26 @@ sandboxes only. It must include every domain a credential is injected into:
 `opencode.ai` in the list every model call is refused. `registry.npmjs.org`
 is there for `pi install npm:...`.
 
-## 5. Run
+## 5. Extensions
+
+Pi installs the packages listed under `packages` in
+`files/home/.pi/agent/settings.json` the first time it starts in a new
+sandbox, from `registry.npmjs.org`. The kit ships
+[`@gotgenes/pi-permission-system`](https://www.npmjs.com/package/@gotgenes/pi-permission-system),
+pinned to an exact version because an extension runs with all of Pi's rights.
+To add another one, append its `npm:<package>@<version>` source to that list
+and recreate the sandbox.
+
+The extension's global policy, in
+`files/home/.pi/agent/extensions/pi-permission-system/config.json`, allows
+everything except reading `.env` files and `rm -rf`. It has no `ask` rule on
+purpose: in `pi -p` (for example `sbx exec <sandbox> -- pi -p ...`) there is
+no UI to answer, and the extension refuses every call that needs approval. A
+project can tighten the policy in its own
+`.pi/extensions/pi-permission-system/config.json`, which the kit loads because
+it starts Pi with `-a`.
+
+## 6. Run
 
 ```bash
 sbx kit validate ~/path/to/ai4dev-pi-kit
