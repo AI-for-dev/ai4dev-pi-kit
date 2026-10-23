@@ -83,6 +83,11 @@ Pin the version to make them comparable:
 "packages": ["npm:@ai-for-dev/providers@0.4.1"]
 ```
 
+The kit's one `setup.install` command writes the sandbox proxy into
+`~/.npmrc` when the sandbox is created. The npm that Pi spawns inherits
+`HTTP_PROXY` from the environment, but a shell opened with `sbx exec` does
+not, so `pi install npm:...` would fail there without it.
+
 ## 4. Register the provider keys
 
 Each secret name matches a `service:` id declared by the kit:
@@ -134,3 +139,12 @@ cd ~/your-project
 sbx run ~/path/to/ai4dev-pi-kit
 ```
 
+## What else the kit sets
+
+`spec.yaml` puts three variables in the sandbox: `PI_SKIP_VERSION_CHECK=1`,
+`PI_TELEMETRY=0` and `NODE_OPTIONS=--disable-warning=UNDICI-EHPA`.
+
+It also appends a note to `AGENTS.md`, so the agent knows it is working in a
+microVM where `sudo` needs no password, Docker runs inside the VM, outbound
+traffic is filtered by an allowlist rather than broken, and the provider key
+is a sentinel rather than the real thing.
