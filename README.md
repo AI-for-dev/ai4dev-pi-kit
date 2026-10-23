@@ -90,15 +90,16 @@ not, so `pi install npm:...` would fail there without it.
 
 ## 4. Register the provider keys
 
-Each secret name matches a `service:` id declared by the kit:
+Each secret name matches a `service:` id declared by the kit, and the kit
+names each one after the provider it feeds:
 
 ```bash
-sbx secret set ilaas      # provider ia4dev-ilaas
-sbx secret set gricad     # provider ia4dev-gricad
+sbx secret set ia4dev-ilaas
+sbx secret set ia4dev-gricad
 ```
 
-Only `ilaas` is `required: true`. A sandbox starts with the ILAAS key alone,
-and `ia4dev-gricad` then lists no model.
+Only `ia4dev-ilaas` is `required: true`. A sandbox starts with the ILAAS key
+alone, and `ia4dev-gricad` then lists no model.
 
 On the first interactive run, `sbx` asks you to approve the credential binding
 (required for third-party kits on `schemaVersion: "2"`). `sbx create` and
@@ -108,10 +109,10 @@ sentinel, and the first model call fails with a `401`. Write the bindings in
 
 ```yaml
 bindings:
-  ilaas:
+  ia4dev-ilaas:
     apiKey:
       domains: [devllm.ilaas.fr]
-  gricad:
+  ia4dev-gricad:
     apiKey:
       domains: [ia4dev-owui.univ-grenoble-alpes.fr]
 ```

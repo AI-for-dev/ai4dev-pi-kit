@@ -49,7 +49,7 @@ credentials:
   # ia4dev-ilaas and ia4dev-gricad providers and asks each server for its
   # model list. The variable names are the package's own. proxyManaged =>
   # the VM only sees the sentinel value.
-  - service: ilaas
+  - service: ia4dev-ilaas
     description: ILAAS API key, provider ia4dev-ilaas (devllm.ilaas.fr)
     required: true
     apiKey:
@@ -60,7 +60,7 @@ credentials:
           scheme: bearer
   # Optional: a student with only an ILAAS key still gets a working sandbox,
   # with ia4dev-gricad listing no model.
-  - service: gricad
+  - service: ia4dev-gricad
     description: IA4Dev/GRICAD API key, provider ia4dev-gricad (UGA)
     required: false
     apiKey:
