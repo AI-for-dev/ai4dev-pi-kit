@@ -45,20 +45,10 @@ setup:
       description: Point npm at the sandbox proxy in ~/.npmrc
 
 credentials:
-  # One key covers opencode-go and opencode (Zen): pi reads OPENCODE_API_KEY
-  # for both. proxyManaged => the VM only sees the sentinel value.
-  - service: opencode-go
-    description: OpenCode API key used by pi (opencode-go and opencode Zen)
-    required: true
-    apiKey:
-      name: OPENCODE_API_KEY
-      proxyManaged: true
-      inject:
-        - domain: opencode.ai
-          scheme: bearer
-  # The two keys below are read by @ai-for-dev/providers, which registers the
+  # Both keys are read by @ai-for-dev/providers, which registers the
   # ia4dev-ilaas and ia4dev-gricad providers and asks each server for its
-  # model list. The variable names are the package's own.
+  # model list. The variable names are the package's own. proxyManaged =>
+  # the VM only sees the sentinel value.
   - service: ilaas
     description: ILAAS API key, provider ia4dev-ilaas (devllm.ilaas.fr)
     required: true
@@ -83,7 +73,6 @@ credentials:
 permissions:
   network:
     allow:
-      - opencode.ai
       - devllm.ilaas.fr
       - ia4dev-owui.univ-grenoble-alpes.fr
       # pi installs @ai-for-dev/providers from here on first start.

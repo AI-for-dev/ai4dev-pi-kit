@@ -72,6 +72,9 @@ The package asks each server for its model list at startup, when you open
 and the reasoning settings measured for each model. A model the package does
 not know stays usable and takes the context window the server reports.
 
+Pi opens on `gemma-4-31b` from `ia4dev-ilaas`, thinking level high. `/model`
+switches to anything else your key reaches.
+
 `npm:@ai-for-dev/providers` resolves to whatever npm serves the first time a
 sandbox runs it, so two sandboxes a release apart can see different models.
 Pin the version to make them comparable:
@@ -92,14 +95,6 @@ sbx secret set gricad     # provider ia4dev-gricad
 Only `ilaas` is `required: true`. A sandbox starts with the ILAAS key alone,
 and `ia4dev-gricad` then lists no model.
 
-`opencode-go` authenticates with an API key (`OPENCODE_API_KEY`), not OAuth.
-If the key is already in `~/.pi/agent/auth.json` on the host:
-
-```bash
-python3 -c "import json,os;print(json.load(open(os.path.expanduser('~/.pi/agent/auth.json')))['opencode-go']['key'])" \
-  | sbx secret set opencode-go
-```
-
 On the first interactive run, `sbx` asks you to approve the credential binding
 (required for third-party kits on `schemaVersion: "2"`). `sbx create` and
 scripts get no prompt: the sandbox starts anyway, the proxy never swaps the
@@ -114,9 +109,6 @@ bindings:
   gricad:
     apiKey:
       domains: [ia4dev-owui.univ-grenoble-alpes.fr]
-  opencode-go:
-    apiKey:
-      domains: [opencode.ai]
 ```
 
 ## 5. Set the network policy
@@ -129,10 +121,10 @@ sbx policy init deny-all
 
 The kit's own `permissions.network.allow` list layers on top, for its
 sandboxes only. It must include every domain a credential is injected into:
-`sbx` does not allow those implicitly, so without `devllm.ilaas.fr`,
-`ia4dev-owui.univ-grenoble-alpes.fr` and `opencode.ai` in the list every model
-call is refused. `registry.npmjs.org` is where Pi fetches
-`@ai-for-dev/providers`, and what `pi install npm:...` needs afterwards.
+`sbx` does not allow those implicitly, so without `devllm.ilaas.fr` and
+`ia4dev-owui.univ-grenoble-alpes.fr` in the list every model call is refused.
+`registry.npmjs.org` is where Pi fetches `@ai-for-dev/providers`, and what
+`pi install npm:...` needs afterwards.
 
 ## 6. Run
 
@@ -142,25 +134,3 @@ cd ~/your-project
 sbx run ~/path/to/ai4dev-pi-kit
 ```
 
-## Model auth headers
-
-`opencode-go` expects a different header depending on the model's API. The
-kit injects `Authorization: Bearer` (`scheme: bearer`):
-
-| API | Models | Header |
-| --- | --- | --- |
-| `openai-completions` / `openai-responses` | `deepseek-v4-flash`, `deepseek-v4-pro`, `glm-5.1`, `glm-5.2`, `kimi-*`, `mimo-*`, `hy3`, `minimax-m2.7`, `qwen3.6-plus`, `gpt-5.6-luna`, `grok-4.5` | `Authorization: Bearer` |
-| `anthropic-messages` | `minimax-m3`, `qwen3.7-max`, `qwen3.7-plus`, `qwen3.8-max` | `x-api-key` |
-
-`scheme` has no shortcut for `x-api-key`. To use one of the four
-`anthropic-messages` models, replace the `opencode.ai` inject entry in
-`spec.yaml` with:
-
-```yaml
-        - domain: opencode.ai
-          header: x-api-key
-          format: "%s"
-```
-
-Both course providers use `openai-completions` and read
-`Authorization: Bearer`, so `scheme: bearer` is right for them too.
