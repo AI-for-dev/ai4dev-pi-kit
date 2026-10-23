@@ -1,7 +1,7 @@
 schemaVersion: "2"
 kind: sandbox
 name: pi
-version: "0.2.0"
+version: "0.3.0"
 displayName: Pi
 description: Pi coding agent (pi.dev) in a Docker sandbox.
 sourceURL: https://github.com/earendil-works/pi
@@ -29,36 +29,56 @@ environment:
     PI_TELEMETRY: "0"
     NODE_OPTIONS: "--disable-warning=UNDICI-EHPA"
 
+setup:
+  install:
+    # settings.json declares @ai-for-dev/providers, which pi fetches from npm
+    # the first time it starts. npm picks up HTTP_PROXY from the environment
+    # when pi spawns it, but an `sbx exec` shell gets no such environment, so
+    # write the proxy into ~/.npmrc too and keep `pi install` working there.
+    #
+    # Guarded on HTTP_PROXY being set: npm rejects an empty value for a
+    # url-typed key, and a failing install step takes sandbox creation down
+    # with it. Re-exporting the runtime's own variables is the pattern of
+    # SPEC-v2 9.5, and rewriting the same two keys on recreate is harmless.
+    - command: 'if [ -n "${HTTP_PROXY:-}" ]; then npm config set proxy="$HTTP_PROXY" https-proxy="${HTTPS_PROXY:-$HTTP_PROXY}"; fi'
+      user: "1000"
+      description: Point npm at the sandbox proxy in ~/.npmrc
+
 credentials:
-  # One key covers opencode-go and opencode (Zen): pi reads OPENCODE_API_KEY
-  # for both. proxyManaged => the VM only sees the sentinel value.
-  - service: opencode-go
-    description: OpenCode API key used by pi (opencode-go and opencode Zen)
-    required: true
-    apiKey:
-      name: OPENCODE_API_KEY
-      proxyManaged: true
-      inject:
-        - domain: opencode.ai
-          scheme: bearer
-  - service: ilaas
-    description: ILAAS API KEY (llm.ilaas.fr)
+  # Both keys are read by @ai-for-dev/providers, which registers the
+  # ia4dev-ilaas and ia4dev-gricad providers and asks each server for its
+  # model list. The variable names are the package's own. proxyManaged =>
+  # the VM only sees the sentinel value.
+  - service: ia4dev-ilaas
+    description: ILAAS API key, provider ia4dev-ilaas (devllm.ilaas.fr)
     required: true
     apiKey:
       name: ILAAS_API_KEY
       proxyManaged: true
       inject:
-        - domain: llm.ilaas.fr
+        - domain: devllm.ilaas.fr
+          scheme: bearer
+  # Optional: a student with only an ILAAS key still gets a working sandbox,
+  # with ia4dev-gricad listing no model.
+  - service: ia4dev-gricad
+    description: IA4Dev/GRICAD API key, provider ia4dev-gricad (UGA)
+    required: false
+    apiKey:
+      name: GRICAD_API_KEY
+      proxyManaged: true
+      inject:
+        - domain: ia4dev-owui.univ-grenoble-alpes.fr
           scheme: bearer
 
 permissions:
   network:
     allow:
-      - opencode.ai
-      - llm.ilaas.fr
+      - devllm.ilaas.fr
+      - ia4dev-owui.univ-grenoble-alpes.fr
+      # pi installs @ai-for-dev/providers from here on first start.
+      - registry.npmjs.org
       - github.com
       - raw.githubusercontent.com
       - pypi.org
       - files.pythonhosted.org
-      - registry.npmjs.org
       - pi.dev

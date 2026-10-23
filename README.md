@@ -13,9 +13,7 @@ unrelated too: it is a Pi extension that wraps bash commands with
 ```
 ai4dev-pi-kit
 ├── spec.yaml
-└── files/home/.pi/agent
-    ├── models.json
-    └── settings.json
+└── files/home/.pi/agent/settings.json
 ```
 
 ## 1. Install sbx
@@ -52,21 +50,56 @@ sandbox:
   image: docker.io/sbx/pi-image@sha256:<digest>
 ```
 
-## 3. Register the provider keys
+## 3. The course models
 
-Each secret name matches a `service:` id declared by the kit. For ILAAS:
+`settings.json` declares one Pi package:
 
-```bash
-sbx secret set ilaas
+```json
+"packages": ["npm:@ai-for-dev/providers"]
 ```
 
-`opencode-go` authenticates with an API key (`OPENCODE_API_KEY`), not OAuth.
-If the key is already in `~/.pi/agent/auth.json` on the host:
+Pi installs it from npm the first time it starts.
+[@ai-for-dev/providers](https://github.com/AI-for-dev/providers) registers the
+two providers used in the course:
+
+| Provider | Server | Key |
+| --- | --- | --- |
+| `ia4dev-ilaas` | `https://devllm.ilaas.fr/v1` | `ILAAS_API_KEY` |
+| `ia4dev-gricad` | `https://ia4dev-owui.univ-grenoble-alpes.fr/api` | `GRICAD_API_KEY` |
+
+The package asks each server for its model list at startup, when you open
+`/model` and after `/login`. It also holds the context window, the vision flag
+and the reasoning settings measured for each model. A model the package does
+not know stays usable and takes the context window the server reports.
+
+Pi opens on `gemma-4-31b` from `ia4dev-ilaas`, thinking level high. `/model`
+switches to anything else your key reaches.
+
+`npm:@ai-for-dev/providers` resolves to whatever npm serves the first time a
+sandbox runs it, so two sandboxes a release apart can see different models.
+Pin the version to make them comparable:
+
+```json
+"packages": ["npm:@ai-for-dev/providers@0.4.1"]
+```
+
+The kit's one `setup.install` command writes the sandbox proxy into
+`~/.npmrc` when the sandbox is created. The npm that Pi spawns inherits
+`HTTP_PROXY` from the environment, but a shell opened with `sbx exec` does
+not, so `pi install npm:...` would fail there without it.
+
+## 4. Register the provider keys
+
+Each secret name matches a `service:` id declared by the kit, and the kit
+names each one after the provider it feeds:
 
 ```bash
-python3 -c "import json,os;print(json.load(open(os.path.expanduser('~/.pi/agent/auth.json')))['opencode-go']['key'])" \
-  | sbx secret set opencode-go
+sbx secret set ia4dev-ilaas
+sbx secret set ia4dev-gricad
 ```
+
+Only `ia4dev-ilaas` is `required: true`. A sandbox starts with the ILAAS key
+alone, and `ia4dev-gricad` then lists no model.
 
 On the first interactive run, `sbx` asks you to approve the credential binding
 (required for third-party kits on `schemaVersion: "2"`). `sbx create` and
@@ -76,15 +109,15 @@ sentinel, and the first model call fails with a `401`. Write the bindings in
 
 ```yaml
 bindings:
-  ilaas:
+  ia4dev-ilaas:
     apiKey:
-      domains: [llm.ilaas.fr]
-  opencode-go:
+      domains: [devllm.ilaas.fr]
+  ia4dev-gricad:
     apiKey:
-      domains: [opencode.ai]
+      domains: [ia4dev-owui.univ-grenoble-alpes.fr]
 ```
 
-## 4. Set the network policy
+## 5. Set the network policy
 
 Required once, before the first sandbox, and applies to all of them:
 
@@ -94,11 +127,12 @@ sbx policy init deny-all
 
 The kit's own `permissions.network.allow` list layers on top, for its
 sandboxes only. It must include every domain a credential is injected into:
-`sbx` does not allow those implicitly, so without `llm.ilaas.fr` and
-`opencode.ai` in the list every model call is refused. `registry.npmjs.org`
-is there for `pi install npm:...`.
+`sbx` does not allow those implicitly, so without `devllm.ilaas.fr` and
+`ia4dev-owui.univ-grenoble-alpes.fr` in the list every model call is refused.
+`registry.npmjs.org` is where Pi fetches `@ai-for-dev/providers`, and what
+`pi install npm:...` needs afterwards.
 
-## 5. Run
+## 6. Run
 
 ```bash
 sbx kit validate ~/path/to/ai4dev-pi-kit
@@ -106,22 +140,12 @@ cd ~/your-project
 sbx run ~/path/to/ai4dev-pi-kit
 ```
 
-## Model auth headers
+## What else the kit sets
 
-`opencode-go` expects a different header depending on the model's API. The
-kit injects `Authorization: Bearer` (`scheme: bearer`):
+`spec.yaml` puts three variables in the sandbox: `PI_SKIP_VERSION_CHECK=1`,
+`PI_TELEMETRY=0` and `NODE_OPTIONS=--disable-warning=UNDICI-EHPA`.
 
-| API | Models | Header |
-| --- | --- | --- |
-| `openai-completions` / `openai-responses` | `deepseek-v4-flash`, `deepseek-v4-pro`, `glm-5.1`, `glm-5.2`, `kimi-*`, `mimo-*`, `hy3`, `minimax-m2.7`, `qwen3.6-plus`, `gpt-5.6-luna`, `grok-4.5` | `Authorization: Bearer` |
-| `anthropic-messages` | `minimax-m3`, `qwen3.7-max`, `qwen3.7-plus`, `qwen3.8-max` | `x-api-key` |
-
-`scheme` has no shortcut for `x-api-key`. To use one of the four
-`anthropic-messages` models, replace the `opencode.ai` inject entry in
-`spec.yaml` with:
-
-```yaml
-        - domain: opencode.ai
-          header: x-api-key
-          format: "%s"
-```
+It also appends a note to `AGENTS.md`, so the agent knows it is working in a
+microVM where `sudo` needs no password, Docker runs inside the VM, outbound
+traffic is filtered by an allowlist rather than broken, and the provider key
+is a sentinel rather than the real thing.
